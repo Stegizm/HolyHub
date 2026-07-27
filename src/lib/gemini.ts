@@ -6,20 +6,20 @@ import { SYSTEM_PROMPT } from "./constants";
 import type { TriFaithAnswer, ApiError, ErrorKind } from "./types";
 
 /**
- * Initialize the Gemini client.
- * Throws if GEMINI_API_KEY is missing — caller should handle gracefully.
+ * Initialize the Gemini client with a user-provided API key.
+ * The key is supplied per-request from the client (localStorage)
+ * so the server never holds a long-lived secret.
  */
-function getClient(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+function getClient(apiKey: string): GoogleGenAI {
+  if (!apiKey || !apiKey.trim()) {
     const err: ApiError = {
-      kind: "unknown",
+      kind: "no-api-key",
       message:
-        "GEMINI_API_KEY ortam değişkeni tanımlı değil. Lütfen .env.local dosyasına API anahtarınızı ekleyin.",
+        "Gemini API anahtarı gerekli. Lütfen ayarlar simgesinden kendi API anahtarınızı girin.",
     };
     throw err;
   }
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({ apiKey: apiKey.trim() });
 }
 
 /**
@@ -111,12 +111,13 @@ function classifyError(err: unknown): ApiError {
     msg.toLowerCase().includes("api_key") ||
     msg.toLowerCase().includes("unauthorized") ||
     msg.toLowerCase().includes("401") ||
-    msg.toLowerCase().includes("403")
+    msg.toLowerCase().includes("403") ||
+    msg.toLowerCase().includes("invalid")
   ) {
     return {
-      kind: "unknown",
+      kind: "invalid-api-key",
       message:
-        "Gemini API anahtarı geçersiz veya yetkisiz. Lütfen .env.local dosyanızı kontrol edin.",
+        "Gemini API anahtarı geçersiz. Lütfen ayarlardan kontrol edip tekrar deneyin.",
     };
   }
 
@@ -134,10 +135,13 @@ function classifyError(err: unknown): ApiError {
  *
  * Safety settings are set to BLOCK_MEDIUM_AND_ABOVE per PRD spec.
  */
-export async function askTriFaith(question: string): Promise<TriFaithAnswer> {
+export async function askTriFaith(
+  question: string,
+  apiKey: string,
+): Promise<TriFaithAnswer> {
   let client: GoogleGenAI;
   try {
-    client = getClient();
+    client = getClient(apiKey);
   } catch (e) {
     // Re-throw ApiError directly, otherwise classify
     if (e && typeof e === "object" && "kind" in e) throw e;

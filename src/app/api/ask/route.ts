@@ -1,5 +1,9 @@
-// POST /api/ask — proxy to Gemini API, keeping the API key server-side
-// POST /api/ask — Gemini API'ye proxy, API anahtarı sunucuda kalır
+// POST /api/ask — proxy to Gemini API using the user-supplied API key.
+// POST /api/ask — Kullanıcının gönderdiği API anahtarı ile Gemini'ye proxy.
+//
+// v1.1+: The server no longer holds a long-lived GEMINI_API_KEY in env.
+// Each request carries the user's key in the JSON body; we forward it to
+// Gemini and discard it immediately after the response.
 
 import { NextRequest, NextResponse } from "next/server";
 import { askTriFaith } from "@/lib/gemini";
@@ -10,7 +14,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  let body: { question?: unknown };
+  let body: { question?: unknown; apiKey?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -21,6 +25,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(err, { status: 400 });
   }
 
+  // API key
+  const apiKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
+  if (!apiKey) {
+    const err: ApiError = {
+      kind: "no-api-key",
+      message:
+        "Gemini API anahtarı gerekli. Lütfen ayarlar simgesinden kendi API anahtarınızı girin.",
+    };
+    return NextResponse.json(err, { status: 401 });
+  }
+
+  // Question
   const q = typeof body.question === "string" ? body.question.trim() : "";
   if (!q) {
     const err: ApiError = {
@@ -38,13 +54,19 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const answer: TriFaithAnswer = await askTriFaith(q);
+    const answer: TriFaithAnswer = await askTriFaith(q, apiKey);
     return NextResponse.json(answer, { status: 200 });
   } catch (e) {
     const err = e as ApiError;
     // If it's already a classified ApiError, use it; otherwise wrap
     if (err && typeof err === "object" && "kind" in err && "message" in err) {
-      return NextResponse.json(err, { status: 500 });
+      const status =
+        err.kind === "no-api-key" || err.kind === "invalid-api-key"
+          ? 401
+          : err.kind === "api-limit"
+            ? 429
+            : 500;
+      return NextResponse.json(err, { status });
     }
     const fallback: ApiError = {
       kind: "unknown",
@@ -56,5 +78,9 @@ export async function POST(req: NextRequest) {
 
 /** Health check */
 export async function GET() {
-  return NextResponse.json({ ok: true, service: "holy-book-assistant" });
+  return NextResponse.json({
+    ok: true,
+    service: "holy-book-assistant",
+    version: "1.1.0",
+  });
 }

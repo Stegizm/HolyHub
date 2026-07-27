@@ -77,29 +77,40 @@ cd HolyHub
 bun install
 # or: npm install / pnpm install
 
-# 3. Set up environment variables
-cp .env.example .env.local
-# Open .env.local and add your GEMINI_API_KEY
-
-# 4. Start the dev server
+# 3. Start the dev server
 bun run dev
 # or: npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser. On
+first visit, click the **🔑 key icon** in the header and paste your
+Gemini API key — it is stored only in your browser's localStorage.
 
-### Environment Variables
+### API Key (v1.1+)
 
-Create a `.env.local` file:
+As of **v1.1**, HolyHub uses **client-side API keys**: each user supplies
+their own Google Gemini API key via the in-app dialog. The key is stored
+**only** in the browser's `localStorage` and is never persisted on the
+server.
+
+1. Get a free key at <https://aistudio.google.com/apikey>
+2. Open the app → click the **🔑** icon in the header
+3. Paste your key (format: `AIzaSy...`) → **Kaydet**
+
+No server-side environment variables are required for normal operation.
+
+<details>
+<summary>Legacy: server-side key (v1.0)</summary>
+
+v1.0 read the key from `GEMINI_API_KEY` in `.env.local`. This is no
+longer used at runtime but is still supported as a fallback in case you
+want to pre-configure a shared key:
 
 ```env
-# Google Gemini API Key (required)
-# Get one for free at https://aistudio.google.com/app/apikey
 GEMINI_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-# Prisma database (local file)
-DATABASE_URL=file:./dev.db
 ```
+
+</details>
 
 ---
 
@@ -403,29 +414,41 @@ cd HolyHub
 bun install
 # veya: npm install / pnpm install
 
-# 3. Ortam değişkenlerini ayarlayın
-cp .env.example .env.local
-# .env.local dosyasını açın ve GEMINI_API_KEY ekleyin
-
-# 4. Geliştirme sunucusunu başlatın
+# 3. Geliştirme sunucusunu başlatın
 bun run dev
 # veya: npm run dev
 ```
 
 Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresini açın.
+İlk ziyarette header’daki **🔑 anahtar simgesine** tıklayın ve kendi
+Gemini API anahtarınızı girin — anahtar yalnızca tarayıcınızın
+localStorage’ında saklanır.
 
-### Ortam Değişkenleri
+### API Anahtarı (v1.1+)
 
-`.env.local` dosyasını oluşturun:
+**v1.1** ile birlikte HolyHub **istemci tarafı API anahtarı** kullanır:
+her kullanıcı kendi Google Gemini API anahtarını uygulama içi pencereden
+girer. Anahtar **yalnızca** tarayıcının `localStorage`’ında saklanır ve
+sunucuda tutulmaz.
+
+1. <https://aistudio.google.com/apikey> adresinden ücretsiz anahtar alın
+2. Uygulamayı açın → header’daki **🔑** simgesine tıklayın
+3. Anahtarınızı (format: `AIzaSy...`) yapıştırın → **Kaydet**
+
+Normal çalışma için sunucu tarafı ortam değişkeni gerekmez.
+
+<details>
+<summary>Eski yöntem: sunucu tarafı anahtar (v1.0)</summary>
+
+v1.0 anahtarı `.env.local` içindeki `GEMINI_API_KEY` alanından okuyordu.
+Çalışma zamanında artık kullanılmıyor, ancak paylaşımlı anahtar ayarlamak
+isteyenler için hala destekleniyor:
 
 ```env
-# Google Gemini API Anahtarı (zorunlu)
-# https://aistudio.google.com/app/apikey adresinden ücretsiz alın
 GEMINI_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-# Prisma veritabanı (yerel dosya)
-DATABASE_URL=file:./dev.db
 ```
+
+</details>
 
 ---
 

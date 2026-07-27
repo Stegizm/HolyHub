@@ -1,15 +1,39 @@
 "use client";
 
-import { BookOpenText, History } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BookOpenText, History, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./theme-toggle";
+import { ApiKeyDialog } from "./api-key-dialog";
+import { hasApiKey } from "@/lib/api-key";
 
 interface HeaderProps {
   onOpenHistory: () => void;
   historyCount: number;
+  /** Notify parent when the API key was saved/removed so the home view can react. */
+  onApiKeyChange?: (hasKey: boolean) => void;
 }
 
-export function Header({ onOpenHistory, historyCount }: HeaderProps) {
+export function Header({
+  onOpenHistory,
+  historyCount,
+  onApiKeyChange,
+}: HeaderProps) {
+  const [apiOpen, setApiOpen] = useState(false);
+  const [hasKey, setHasKey] = useState(false);
+
+  // Sync localStorage presence into local state on mount and when dialog closes
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHasKey(hasApiKey());
+  }, [apiOpen]);
+
+  const handleSaved = () => {
+    const next = hasApiKey();
+    setHasKey(next);
+    onApiKeyChange?.(next);
+  };
+
   return (
     <header className="sticky top-0 z-30 backdrop-blur-md bg-background/80 border-b border-border/60 no-print">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -22,12 +46,32 @@ export function Header({ onOpenHistory, historyCount }: HeaderProps) {
               Kutsal Kitap Asistanı
             </span>
             <span className="text-[10px] sm:text-xs text-muted-foreground italic">
-              Üç dinin bilgeliği · Tarafsız rehber
+              Üç dinin bilgeliigi · Tarafsız rehber
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setApiOpen(true)}
+            className="rounded-full hover:bg-gold-soft hover:text-gold relative"
+            aria-label="Gemini API anahtarı"
+            title={
+              hasKey
+                ? "API anahtarı kayıtlı — değiştirmek için tıklayın"
+                : "API anahtarı gerekli — eklemek için tıklayın"
+            }
+          >
+            <KeyRound
+              className={`h-4 w-4 ${hasKey ? "text-green-500" : "text-orange-500"}`}
+            />
+            {!hasKey && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+            )}
+          </Button>
+
           <Button
             variant="ghost"
             size="sm"
@@ -46,6 +90,12 @@ export function Header({ onOpenHistory, historyCount }: HeaderProps) {
           <ThemeToggle />
         </div>
       </div>
+
+      <ApiKeyDialog
+        open={apiOpen}
+        onOpenChange={setApiOpen}
+        onSaved={handleSaved}
+      />
     </header>
   );
 }

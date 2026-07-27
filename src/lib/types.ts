@@ -37,6 +37,8 @@ export type ErrorKind =
   | "safety"
   | "parse"
   | "empty"
+  | "no-api-key"
+  | "invalid-api-key"
   | "unknown";
 
 /** Standard error payload returned by /api/ask */

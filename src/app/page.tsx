@@ -14,6 +14,7 @@ import {
   removeFromHistory,
   clearHistory,
 } from "@/lib/history";
+import { getApiKey } from "@/lib/api-key";
 import type {
   AppView,
   HistoryEntry,
@@ -30,6 +31,7 @@ export default function Home() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [missingKey, setMissingKey] = useState(false);
   const { toast } = useToast();
 
   // Load history on mount — localStorage is an external system,
@@ -37,10 +39,25 @@ export default function Home() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHistory(getHistory());
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMissingKey(!getApiKey());
   }, []);
 
   const handleSubmit = useCallback(
     async (q: string) => {
+      // 1. Require an API key — if missing, show a friendly prompt
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        setMissingKey(true);
+        toast({
+          title: "API anahtarı gerekli",
+          description:
+            "Lütfen üst köşedeki anahtar simgesinden Gemini API anahtarınızı girin.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setQuestion(q);
       setView("loading");
       setError(null);
@@ -50,14 +67,19 @@ export default function Home() {
         const res = await fetch("/api/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: q }),
+          body: JSON.stringify({ question: q, apiKey }),
         });
 
         const data = await res.json();
 
         if (!res.ok) {
           // data is an ApiError
-          setError(data as ApiError);
+          const err = data as ApiError;
+          // If the server reports the key is invalid/missing, surface that clearly
+          if (err.kind === "no-api-key" || err.kind === "invalid-api-key") {
+            setMissingKey(true);
+          }
+          setError(err);
           setView("error");
           return;
         }
@@ -119,11 +141,14 @@ export default function Home() {
     }
   }, []);
 
-  const handleRemoveHistory = useCallback((id: string) => {
-    const next = removeFromHistory(id);
-    setHistory(next);
-    toast({ title: "Silindi", description: "Soru geçmişten kaldırıldı." });
-  }, [toast]);
+  const handleRemoveHistory = useCallback(
+    (id: string) => {
+      const next = removeFromHistory(id);
+      setHistory(next);
+      toast({ title: "Silindi", description: "Soru geçmişten kaldırıldı." });
+    },
+    [toast],
+  );
 
   const handleClearHistory = useCallback(() => {
     clearHistory();
@@ -131,11 +156,16 @@ export default function Home() {
     toast({ title: "Geçmiş temizlendi", description: "Tüm sorgular silindi." });
   }, [toast]);
 
+  const handleApiKeyChange = useCallback((hasKey: boolean) => {
+    setMissingKey(!hasKey);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col paper-texture">
       <Header
         onOpenHistory={() => setHistoryOpen(true)}
         historyCount={history.length}
+        onApiKeyChange={handleApiKeyChange}
       />
 
       <main className="flex-1">
@@ -144,13 +174,40 @@ export default function Home() {
             <HomeHero onPick={(q) => setInputValue(q)} />
 
             <div className="ornament-divider">
-              <span className="text-gold text-sm" aria-hidden>❧</span>
+              <span className="text-gold text-sm" aria-hidden>
+                ❧
+              </span>
             </div>
 
             <QuestionInput
               onSubmit={handleSubmit}
               initialValue={inputValue}
             />
+
+            {/* API key warning */}
+            {missingKey && (
+              <div className="rounded-lg border border-orange-300/50 bg-orange-50/60 dark:bg-orange-950/20 dark:border-orange-700/40 p-4 text-sm space-y-1">
+                <p className="font-medium text-orange-700 dark:text-orange-400">
+                  Gemini API anahtarı gerekli
+                </p>
+                <p className="text-orange-700/80 dark:text-orange-300/80 text-xs leading-relaxed">
+                  Cevapları görebilmek için sağ üstteki{" "}
+                  <span className="font-mono">🔑</span> simgesinden kendi
+                  Gemini API anahtarınızı girin. Anahtarınız yalnızca
+                  tarayıcınızda saklanır — sunucumuza gönderilmez. Ücretsiz
+                  anahtar almak için{" "}
+                  <a
+                    href="https://aistudio.google.com/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-medium"
+                  >
+                    Google AI Studio
+                  </a>
+                  .
+                </p>
+              </div>
+            )}
 
             {/* Trust footer */}
             <div className="pt-4 text-center space-y-2">
@@ -190,8 +247,8 @@ export default function Home() {
             Kutsal Kitap Asistanı · Tarafsız · Akademik · Saygılı
           </p>
           <p className="text-[10px] text-muted-foreground/70 mt-0.5 italic">
-            Bu uygulama eğitim ve araştırma amaçlıdır; herhangi bir dini
-            taraf tutmaz.
+            Bu uygulama eğitim ve araştırma amaçlıdır; herhangi bir dini taraf
+            tutmaz.
           </p>
         </div>
       </footer>

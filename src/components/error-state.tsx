@@ -17,6 +17,8 @@ const ERROR_ICONS: Record<ErrorKind, string> = {
   safety: "🛡️",
   parse: "⚙️",
   empty: "✍️",
+  "no-api-key": "🔑",
+  "invalid-api-key": "🚫",
   unknown: "❓",
 };
 
@@ -26,6 +28,8 @@ const ERROR_TITLES: Record<ErrorKind, string> = {
   safety: "Güvenlik Filtresi",
   parse: "Yanıt Hatası",
   empty: "Soru Eksik",
+  "no-api-key": "API Anahtarı Gerekli",
+  "invalid-api-key": "Geçersiz API Anahtarı",
   unknown: "Beklenmedik Hata",
 };
 

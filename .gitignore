@@ -54,6 +54,4 @@ prompt
 
 server.log
 # Skills directory
-/skills/tool-results/
-upload/
-*.txt
+/skills/
