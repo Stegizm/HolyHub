@@ -1,0 +1,31 @@
+# Docker Compose for HolyHub
+# ============================================================
+# Usage:
+#   docker compose up -d
+#   (set GEMINI_API_KEY in .env first)
+# ============================================================
+
+services:
+  holyhub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: holyhub
+    ports:
+      - "3000:3000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DATABASE_URL=file:/app/data/holyhub.db
+      - NODE_ENV=production
+    volumes:
+      - holyhub-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  holyhub-data:
