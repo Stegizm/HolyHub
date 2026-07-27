@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ApiError, ErrorKind } from "@/lib/types";
 
@@ -9,6 +9,7 @@ interface ErrorStateProps {
   question?: string;
   onRetry?: () => void;
   onHome: () => void;
+  onOpenApiKey?: () => void;
 }
 
 const ERROR_ICONS: Record<ErrorKind, string> = {
@@ -24,7 +25,7 @@ const ERROR_ICONS: Record<ErrorKind, string> = {
 
 const ERROR_TITLES: Record<ErrorKind, string> = {
   network: "Bağlantı Sorunu",
-  "api-limit": "Sunucu Yoğun",
+  "api-limit": "API Limiti Aşıldı",
   safety: "Güvenlik Filtresi",
   parse: "Yanıt Hatası",
   empty: "Soru Eksik",
@@ -33,7 +34,17 @@ const ERROR_TITLES: Record<ErrorKind, string> = {
   unknown: "Beklenmedik Hata",
 };
 
-export function ErrorState({ error, question, onRetry, onHome }: ErrorStateProps) {
+export function ErrorState({
+  error,
+  question,
+  onRetry,
+  onHome,
+  onOpenApiKey,
+}: ErrorStateProps) {
+  // Show an "API anahtarını düzenle" button if this is an API key problem
+  const isApiKeyError =
+    error.kind === "no-api-key" || error.kind === "invalid-api-key";
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12">
       <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 sm:p-8 space-y-5 text-center">
@@ -46,7 +57,7 @@ export function ErrorState({ error, question, onRetry, onHome }: ErrorStateProps
             <span aria-hidden>{ERROR_ICONS[error.kind]}</span>
             {ERROR_TITLES[error.kind]}
           </h2>
-          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-line break-words">
             {error.message}
           </p>
         </div>
@@ -65,6 +76,15 @@ export function ErrorState({ error, question, onRetry, onHome }: ErrorStateProps
             >
               <RefreshCw className="h-4 w-4" />
               Tekrar Dene
+            </Button>
+          )}
+          {isApiKeyError && onOpenApiKey && (
+            <Button
+              onClick={onOpenApiKey}
+              className="rounded-full bg-gold text-white hover:bg-gold/90 gap-2"
+            >
+              <KeyRound className="h-4 w-4" />
+              API Anahtarını Düzenle
             </Button>
           )}
           <Button

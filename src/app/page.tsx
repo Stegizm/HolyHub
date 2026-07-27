@@ -8,6 +8,7 @@ import { LoadingState } from "@/components/loading-state";
 import { ErrorState } from "@/components/error-state";
 import { ResultsView } from "@/components/results-view";
 import { HistoryPanel } from "@/components/history-panel";
+import { ApiKeyDialog } from "@/components/api-key-dialog";
 import {
   addToHistory,
   getHistory,
@@ -32,6 +33,7 @@ export default function Home() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [missingKey, setMissingKey] = useState(false);
+  const [apiKeyOpen, setApiKeyOpen] = useState(false);
   const { toast } = useToast();
 
   // Load history on mount — localStorage is an external system,
@@ -228,6 +230,7 @@ export default function Home() {
             question={question}
             onRetry={handleRetry}
             onHome={handleGoHome}
+            onOpenApiKey={() => setApiKeyOpen(true)}
           />
         )}
 
@@ -260,6 +263,13 @@ export default function Home() {
         onSelect={handleSelectHistory}
         onRemove={handleRemoveHistory}
         onClearAll={handleClearHistory}
+      />
+
+      {/* Independent dialog instance so the error screen can open it directly */}
+      <ApiKeyDialog
+        open={apiKeyOpen}
+        onOpenChange={setApiKeyOpen}
+        onSaved={handleApiKeyChange}
       />
     </div>
   );

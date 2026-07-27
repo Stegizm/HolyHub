@@ -60,15 +60,20 @@ const responseSchema = {
 /**
  * Map a thrown error to a user-friendly ApiError.
  * Categorizes network issues, rate limits, safety filter triggers, and parse errors.
+ *
+ * IMPORTANT: The order of checks matters! API-key errors often contain words like
+ * "resource" (e.g. "Resource not found" on invalid key) which would otherwise
+ * misclassify as a rate limit. So we check API-key BEFORE rate-limit.
  */
 function classifyError(err: unknown): ApiError {
   const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
 
   // Safety / harmful content
   if (
-    msg.toLowerCase().includes("safety") ||
-    msg.toLowerCase().includes("blocked") ||
-    msg.toLowerCase().includes("prohibited")
+    lower.includes("safety") ||
+    lower.includes("blocked") ||
+    lower.includes("prohibited")
   ) {
     return {
       kind: "safety",
@@ -77,53 +82,73 @@ function classifyError(err: unknown): ApiError {
     };
   }
 
-  // Rate limit / quota
+  // API key — check this BEFORE rate limit because some invalid-key errors
+  // contain the word "resource" (e.g. "Resource not found" or "API key not valid").
   if (
-    msg.toLowerCase().includes("rate") ||
-    msg.toLowerCase().includes("quota") ||
-    msg.toLowerCase().includes("429") ||
-    msg.toLowerCase().includes("resource")
+    lower.includes("api key") ||
+    lower.includes("api_key") ||
+    lower.includes("apikey") ||
+    lower.includes("unauthorized") ||
+    lower.includes("401") ||
+    lower.includes("403") ||
+    lower.includes("404") ||
+    lower.includes("permission") ||
+    lower.includes("forbidden") ||
+    lower.includes("invalid_api_key") ||
+    (lower.includes("invalid") && lower.includes("key"))
+  ) {
+    return {
+      kind: "invalid-api-key",
+      message:
+        "Gemini API anahtarı geçersiz veya yetkisiz. Lütfen sağ üstteki 🔑 simgesinden API anahtarınızı kontrol edin. (Detay: " +
+        msg.slice(0, 120) +
+        ")",
+    };
+  }
+
+  // Rate limit / quota — be specific to avoid matching "resource not found" above
+  if (
+    lower.includes("rate limit") ||
+    lower.includes("rate_limit") ||
+    lower.includes("quota") ||
+    lower.includes("429") ||
+    lower.includes("resource_exhausted") ||
+    lower.includes("resourceexhausted") ||
+    lower.includes("too many requests")
   ) {
     return {
       kind: "api-limit",
       message:
-        "Şu an çok yoğunuz, lütfen birkaç dakika sonra tekrar deneyin. API istek limitine ulaşıldı.",
+        "Gemini API istek limitine ulaşıldı. Ücretsiz tierda 15 istek/dakika ve 1500 istek/gün limiti vardır. Lütfen birkaç dakika bekleyin veya daha kısa bir soru deneyin. (Detay: " +
+        msg.slice(0, 120) +
+        ")",
     };
   }
 
   // Network
   if (
-    msg.toLowerCase().includes("fetch") ||
-    msg.toLowerCase().includes("network") ||
-    msg.toLowerCase().includes("econnrefused") ||
-    msg.toLowerCase().includes("timeout")
+    lower.includes("fetch") ||
+    lower.includes("network") ||
+    lower.includes("econnrefused") ||
+    lower.includes("timeout") ||
+    lower.includes("enotfound") ||
+    lower.includes("socket hang up")
   ) {
     return {
       kind: "network",
       message:
-        "İnternet bağlantınızı kontrol edin. Gemini API'ye ulaşılamıyor.",
-    };
-  }
-
-  // API key
-  if (
-    msg.toLowerCase().includes("api key") ||
-    msg.toLowerCase().includes("api_key") ||
-    msg.toLowerCase().includes("unauthorized") ||
-    msg.toLowerCase().includes("401") ||
-    msg.toLowerCase().includes("403") ||
-    msg.toLowerCase().includes("invalid")
-  ) {
-    return {
-      kind: "invalid-api-key",
-      message:
-        "Gemini API anahtarı geçersiz. Lütfen ayarlardan kontrol edip tekrar deneyin.",
+        "İnternet bağlantınızı kontrol edin. Gemini API'ye ulaşılamıyor. (Detay: " +
+        msg.slice(0, 120) +
+        ")",
     };
   }
 
   return {
     kind: "unknown",
-    message: "Beklenmedik bir hata oluştu. Lütfen tekrar deneyin.",
+    message:
+      "Beklenmedik bir hata oluştu. Lütfen tekrar deneyin. (Detay: " +
+      msg.slice(0, 120) +
+      ")",
   };
 }
 

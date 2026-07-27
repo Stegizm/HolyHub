@@ -16,6 +16,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] — 2026-07-28
+
+### 🐛 Bug Fixes
+
+#### Fixed: Misclassification of API-key errors as "rate limit"
+- **Root cause**: The `classifyError()` function checked the rate-limit branch before the API-key branch, and the rate-limit matcher accepted any error containing the word `"resource"`. Google's invalid-API-key errors often contain phrases like `"Resource not found"` or `"API key not valid"` — these were misclassified as `api-limit`, showing "Sunucu Yoğun" when the real problem was an invalid key.
+- **Fix**:
+  - Reordered checks — API-key branch is now evaluated BEFORE rate-limit branch.
+  - Tightened rate-limit matcher to only catch specific signals: `rate_limit`, `quota`, `429`, `resource_exhausted`, `too many requests`. Generic `"resource"` substring no longer matches.
+  - Expanded API-key matcher to also catch `404`, `permission`, `forbidden`, `invalid_api_key`, and `apikey` variants.
+- **Effect**: When a user enters an invalid API key, they now correctly see `"Geçersiz API Anahtarı"` with a "API Anahtarını Düzenle" button instead of the misleading "Sunucu Yoğun" message.
+
+#### Improved: Error messages now include raw error detail
+- All classified error messages now append the original error text (truncated to 120 chars) inside `(Detay: ...)` so users and devs can see the actual cause without opening browser dev tools.
+
+#### Added: "API Anahtarını Düzenle" button on API-key errors
+- The error screen now shows a gold "API Anahtarını Düzenle" button when the error is `no-api-key` or `invalid-api-key`, opening the API key dialog directly.
+
+#### Improved: Rate-limit message now explains the actual free-tier limits
+- Updated text mentions "15 istek/dakika ve 1500 istek/gün" so users know the exact quota and how long to wait.
+
+---
+
 ## [1.1.0] — 2026-07-28
 
 ### 🔑 User-Provided API Key (Client-Side Mode)
@@ -103,6 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/stegizm/HolyHub/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/stegizm/HolyHub/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/stegizm/HolyHub/releases/tag/v1.1.1
 [1.1.0]: https://github.com/stegizm/HolyHub/releases/tag/v1.1.0
 [1.0.0]: https://github.com/stegizm/HolyHub/releases/tag/v1.0.0
