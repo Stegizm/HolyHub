@@ -16,6 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.2] — 2026-07-28
+
+### 🔄 Model Update
+
+#### Changed: Switched to `gemini-2.5-flash`
+- **Reason**: `gemini-2.0-flash` ve `gemini-2.5-flash` farklı kota havuzları kullanır. Ücretsiz tierda 1.500 istek/gün limitini dolduran kullanıcılar, model değişikliğiyle yeni bir kota havuzuna erişebilir.
+- **Bonus**: `gemini-2.5-flash`, 2.0'dan biraz daha akıllı ve daha iyi bağlam anlayışına sahip — cevap kalitesi de artar.
+- **Etki**: Daha az rate limit hatası, daha kaliteli cevaplar.
+
+---
+
 ## [1.1.1] — 2026-07-28
 
 ### 🐛 Bug Fixes
@@ -126,7 +137,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/stegizm/HolyHub/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/stegizm/HolyHub/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/stegizm/HolyHub/releases/tag/v1.1.2
 [1.1.1]: https://github.com/stegizm/HolyHub/releases/tag/v1.1.1
 [1.1.0]: https://github.com/stegizm/HolyHub/releases/tag/v1.1.0
 [1.0.0]: https://github.com/stegizm/HolyHub/releases/tag/v1.0.0

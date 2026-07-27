@@ -175,7 +175,7 @@ export async function askTriFaith(
 
   try {
     const response = await client.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       contents: question,
       config: {
         systemInstruction: SYSTEM_PROMPT,
